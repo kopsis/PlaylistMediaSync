@@ -15,6 +15,7 @@
 		E50AC8BB185F41B0005C2DD5 /* AppDelegate.applescript in Sources */ = {isa = PBXBuildFile; fileRef = E50AC8BA185F41B0005C2DD5 /* AppDelegate.applescript */; };
 		E50AC8BE185F41B0005C2DD5 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8BC185F41B0005C2DD5 /* MainMenu.xib */; };
 		E50AC8C0185F41B0005C2DD5 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8BF185F41B0005C2DD5 /* Images.xcassets */; };
+		E50AC8C7185FC222005C2DD5 /* sanitize.py in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8C6185FC222005C2DD5 /* sanitize.py */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		E50AC8BA185F41B0005C2DD5 /* AppDelegate.applescript */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.applescript; path = AppDelegate.applescript; sourceTree = "<group>"; };
 		E50AC8BD185F41B0005C2DD5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		E50AC8BF185F41B0005C2DD5 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		E50AC8C6185FC222005C2DD5 /* sanitize.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = sanitize.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +89,7 @@
 		E50AC8AE185F41B0005C2DD5 /* PlaylistMediaSync */ = {
 			isa = PBXGroup;
 			children = (
+				E50AC8C6185FC222005C2DD5 /* sanitize.py */,
 				E50AC8BA185F41B0005C2DD5 /* AppDelegate.applescript */,
 				E50AC8BC185F41B0005C2DD5 /* MainMenu.xib */,
 				E50AC8BF185F41B0005C2DD5 /* Images.xcassets */,
@@ -159,6 +162,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E50AC8C7185FC222005C2DD5 /* sanitize.py in Resources */,
 				E50AC8B3185F41B0005C2DD5 /* InfoPlist.strings in Resources */,
 				E50AC8C0185F41B0005C2DD5 /* Images.xcassets in Resources */,
 				E50AC8B9185F41B0005C2DD5 /* Credits.rtf in Resources */,
