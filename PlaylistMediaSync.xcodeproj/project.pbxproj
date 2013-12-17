@@ -16,6 +16,8 @@
 		E50AC8BE185F41B0005C2DD5 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8BC185F41B0005C2DD5 /* MainMenu.xib */; };
 		E50AC8C0185F41B0005C2DD5 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8BF185F41B0005C2DD5 /* Images.xcassets */; };
 		E50AC8C7185FC222005C2DD5 /* sanitize.py in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8C6185FC222005C2DD5 /* sanitize.py */; };
+		E50AC8C918609E95005C2DD5 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E50AC8C818609E95005C2DD5 /* CoreFoundation.framework */; };
+		E50AC8CC1860A6B4005C2DD5 /* PathConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = E50AC8CB1860A6B4005C2DD5 /* PathConverter.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,9 @@
 		E50AC8BD185F41B0005C2DD5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		E50AC8BF185F41B0005C2DD5 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		E50AC8C6185FC222005C2DD5 /* sanitize.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = sanitize.py; sourceTree = "<group>"; };
+		E50AC8C818609E95005C2DD5 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		E50AC8CA1860A6B4005C2DD5 /* PathConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PathConverter.h; sourceTree = "<group>"; };
+		E50AC8CB1860A6B4005C2DD5 /* PathConverter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PathConverter.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E50AC8C918609E95005C2DD5 /* CoreFoundation.framework in Frameworks */,
 				E50AC8A9185F41B0005C2DD5 /* AppleScriptObjC.framework in Frameworks */,
 				E50AC8A7185F41B0005C2DD5 /* Cocoa.framework in Frameworks */,
 			);
@@ -69,6 +75,7 @@
 		E50AC8A5185F41B0005C2DD5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E50AC8C818609E95005C2DD5 /* CoreFoundation.framework */,
 				E50AC8A6185F41B0005C2DD5 /* Cocoa.framework */,
 				E50AC8A8185F41B0005C2DD5 /* AppleScriptObjC.framework */,
 				E50AC8AA185F41B0005C2DD5 /* Other Frameworks */,
@@ -104,6 +111,8 @@
 				E50AC8B0185F41B0005C2DD5 /* PlaylistMediaSync-Info.plist */,
 				E50AC8B1185F41B0005C2DD5 /* InfoPlist.strings */,
 				E50AC8B4185F41B0005C2DD5 /* main.m */,
+				E50AC8CA1860A6B4005C2DD5 /* PathConverter.h */,
+				E50AC8CB1860A6B4005C2DD5 /* PathConverter.m */,
 				E50AC8B6185F41B0005C2DD5 /* PlaylistMediaSync-Prefix.pch */,
 				E50AC8B7185F41B0005C2DD5 /* Credits.rtf */,
 			);
@@ -179,6 +188,7 @@
 			files = (
 				E50AC8BB185F41B0005C2DD5 /* AppDelegate.applescript in Sources */,
 				E50AC8B5185F41B0005C2DD5 /* main.m in Sources */,
+				E50AC8CC1860A6B4005C2DD5 /* PathConverter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

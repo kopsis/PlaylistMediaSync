@@ -9,6 +9,10 @@
 property NSURL : class "NSURL"
 property NSUserDefaults : class "NSUserDefaults"
 property NSBundle : class "NSBundle"
+property NSFileManager : class "NSFileManager"
+property NSDirectoryEnumerator : class "NSDirectoryEnumerator"
+property PathConverter : class "PathConverter"
+property NSMutableSet : class "NSMutableSet"
 
 script AppDelegate
 	property parent : class "NSObject"
@@ -16,14 +20,18 @@ script AppDelegate
     property playlistName : missing value
     property playlistSelection: missing value
     property mediaPath : missing value
+    property mediaPathValue : missing value
     property progressText : missing value
     property progressIndicator : missing value
+    property errorTextView : missing value
+    property errorWindow : missing value
+    property nil : missing value
 	
     on awakeFromNib()
         tell me to log "in awakeFromNib"
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
         tell defaults to registerDefaults_({selectedPlaylist:"Playlist"})
-        tell defaults to registerDefaults_({selectedPath:"/Volumes/Music/"})
+        tell defaults to registerDefaults_({selectedPath:"/"})
     end awakeFromNib
     
 	on applicationWillFinishLaunching_(aNotification)
@@ -55,7 +63,7 @@ script AppDelegate
         -- Clear progress
         progressText's setStringValue_("")
         progressIndicator's setDoubleValue_(0.0)
-        progressIndicator's stopAnimation()
+        progressIndicator's stopAnimation_(me)
         
         -- Set path from defaults
         tell defaults to set selectedPath to objectForKey_("selectedPath") as Unicode text
@@ -98,6 +106,8 @@ script AppDelegate
     on doSync_(sender)
         -- When Sync button is clicked ...
         tell me to log "Sync Button clicked"
+        tell current application's NSFileManager to set fileMan to defaultManager()
+
         -- Get the selected playlist and path
         set selectedPlaylist to playlistName's titleOfSelectedItem() as Unicode text
         tell me to log selectedPlaylist
@@ -106,14 +116,17 @@ script AppDelegate
         
         -- Start progress
         progressText's setStringValue_("Scanning playlist ...")
+        progressText's displayIfNeeded()
         progressIndicator's setIndeterminate_(true)
+        progressIndicator's displayIfNeeded()
         progressIndicator's startAnimation_(me)
-        
+
         -- Get all tracks from selected playlist
         set trackList to {}
         tell application "iTunes"
             repeat with aTrack in tracks of user playlist selectedPlaylist
-                set theFile to get location of aTrack
+                set theFile to get location of aTrack as text
+                -- tell me to log theFile
                 set theArtist to get artist of aTrack
                 set theAlbum to get album of aTrack
                 set theName to get name of aTrack
@@ -126,55 +139,127 @@ script AppDelegate
         -- Start progress
         progressIndicator's stopAnimation_(me)
         progressText's setStringValue_("Copying files ...")
+        progressText's displayIfNeeded()
         progressIndicator's setIndeterminate_(false)
+        progressIndicator's displayIfNeeded()
         progressIndicator's setDoubleValue_(1.0)
         
         -- Copy tracks to target
+        set writtenFileSet to NSMutableSet's alloc()'s initWithCapacity_(count of trackList)
         set trackCount to count of trackList
         set i to 0.0
         repeat with aTrack in trackList
             set i to i + 1.0
             progressText's setStringValue_(tname of aTrack)
+            progressText's displayIfNeeded()
             progressIndicator's setDoubleValue_((i * 100.0)/trackCount)
+            progressIndicator's displayIfNeeded()
             
-            -- set artistPath to rootDir & tartist of aTrack
+            -- set the root of the destination path
             set pathString to selectedPath as Unicode text
-            tell me to log pathString
-            set pathString to pathString & "/" & tartist of aTrack as Unicode text
-            tell me to log pathString
-            copy my sanitize(pathString) to artistPath
-            tell me to log artistPath
-            set artistPathAlias to POSIX file artistPath
-            set albumPath to artistPath & "/" & talbum of aTrack
-            set albumPathAlias to POSIX file albumPath
-            set trackFile to tnum of aTrack & " " & tname of aTrack & ".mp3"
-
-            tell application "Finder"
-                -- check for Artist folder
-                if not (exists artistPathAlias) then
-                    -- create folder
-                    --make new folder at selectedPath as POSIX file with properties {name:tartist of aTrack}
-                end if
-                -- check for Album folder
-                if not (exists albumPathAlias) then
-                    -- create folder
-                    --make new folder at artistPathAlias with properties {name:talbum of aTrack}
-                end if
-                --set theDupe to duplicate tfile of aTrack to folder albumPathAlias with replacing
-                --set name of theDupe to trackFile
-                --log (trackFile)
-            end tell
             
-            delay 0.1
+            -- sanitize and set the artist portion of the destination path
+            copy my sanitize(tartist of aTrack as Unicode text) to artistString
+            set artistPath to pathString & "/" & artistString
+            
+            -- sanitize and set the album portion of the destination path
+            copy my sanitize(talbum of aTrack as Unicode text) to albumString
+            set albumPath to artistPath & "/" & albumString
+            
+            -- sanitize and set the full destination path
+            copy my sanitize(tname of aTrack as Unicode text) to trackString
+            set trackFile to (tnum of aTrack as Unicode text) & " " & trackString & ".mp3"
+            set destinationPath to albumPath & "/" & trackFile
+            
+            -- set the source path
+            set sourcePath to tfile of aTrack
+            set sourcePathPosix to PathConverter's createPosixFromHFS_(sourcePath)
+
+            -- create folder as needed
+            set status to fileMan's createDirectoryAtPath_withIntermediateDirectories_attributes_error_(albumPath, true, nil, nil)
+            set failures to {}
+            if status is true then
+                tell me to log "Copying " & sourcePathPosix & " to " & destinationPath
+                --set status to fileMan's copyItemAtPath_toPath_error_(sourcePathPosix, destinationPath, nil)
+                set status to true
+                if status is false then
+                    tell me to log "Failed: " & sourcePath
+                    set failures to failures & {sourcePath}
+                else
+                    writtenFileSet's addObject_(destinationPath)
+                end if
+            end if
         end repeat
 
         -- End progress
         progressText's setStringValue_("Cleaning up ...")
         progressIndicator's setIndeterminate_(true)
         progressIndicator's startAnimation_(me)
-        delay 5
+        delay 2
         
         -- Delete orphans on target
+        tell me to log "Copied files: " & writtenFileSet's |count|()
+        -- Create set with full paths of all files/dirs in destination path
+        set destinationFileSet to NSMutableSet's alloc()'s init()
+        set dirIterator to fileMan's enumeratorAtPath_(pathString)
+        set allFiles to dirIterator's allObjects()
+        repeat with aFile in allFiles
+            destinationFileSet's addObject_(pathString & "/" & aFile)
+        end repeat
+        -- Subtract the set of written files to get the list of dirs and orphans
+        destinationFileSet's minusSet_(writtenFileSet)
+        tell me to log "Orphaned files: " & destinationFileSet's |count|()
+        -- Iterate over what remains looking for files
+        set setIterator to destinationFileSet's objectEnumerator()
+        set aFile to setIterator's nextObject()
+        repeat while aFile /= missing value
+            tell me to log aFile as text
+            -- is this a file?
+            set {status, isDir} to fileMan's fileExistsAtPath_isDirectory_(aFile, reference)
+            if isDir is false then
+                tell me to log "Delete: " & aFile
+                set status to fileMan's removeItemAtPath_error_(aFile, missing value)
+                -- Remove from the set
+                destinationFileSet's removeObject_(aFile)
+            end if
+            set aFile to setIterator's nextObject()
+        end repeat
+        -- Iterate repeatedly, deleting the first empty directory we find on each iteration
+        set deadlocked to false
+        set lastCount to destinationFileSet's |count|()
+        repeat while lastCount is greater than 0 and deadlocked is false
+            -- Iterate until we find an empty directory
+            set setIterator to destinationFileSet's objectEnumerator()
+            set aFile to setIterator's nextObject()
+            repeat while aFile /= missing value
+                -- tell me to log "Checking for empty dir: " & aFile
+                -- Is directory empty?
+                set dirContents to fileMan's contentsOfDirectoryAtPath_error_(aFile, missing value)
+                if dirContents is missing value then
+                    set contentsCount to 0
+                else
+                    set contentsCount to dirContents's |count|()
+                end if
+                if contentsCount is 0 then
+                    -- Directory is empty so delete it
+                    tell me to log "Deleting: " & aFile
+                    set status to fileMan's removeItemAtPath_error_(aFile, missing value)
+                    -- Remove from the set
+                    destinationFileSet's removeObject_(aFile)
+                    -- We've mutated the set, so bail out of the inner loop
+                    exit
+                end if
+                set aFile to setIterator's nextObject()
+            end repeat
+            -- If the set size hasn't changed, we couldn't find anything to delete - stop iterating
+            set thisCount to destinationFileSet's |count|()
+            if thisCount = lastCount then
+                set deadlocked to true
+                tell me to log "Deadlocked, bailing out of orphan cleanup"
+            else
+                set lastCount to thisCount
+            end if
+        end repeat
 
         -- Clear progress
         progressIndicator's stopAnimation_(me)
@@ -198,7 +283,7 @@ script AppDelegate
         repeat with arg in arglist
             set args to args & " " & quoted form of arg
         end repeat
-        tell me to log "Running python script: " & pythonscript & args
+        -- tell me to log "Running python script: " & pythonscript & args
         set theFolder to current application's NSBundle's mainBundle()'s bundlePath() as text
         set pythonscript to quoted form of POSIX path of (theFolder & "/Contents/Resources/" & pythonscript as string)
         tell me to return do shell script "/usr/bin/python " & pythonscript & args
