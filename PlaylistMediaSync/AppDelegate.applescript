@@ -26,6 +26,8 @@ script AppDelegate
     property errorTextView : missing value
     property errorWindow : missing value
     property nil : missing value
+    
+    property simulate : false
 	
     on awakeFromNib()
         tell me to log "in awakeFromNib"
@@ -110,9 +112,9 @@ script AppDelegate
 
         -- Get the selected playlist and path
         set selectedPlaylist to playlistName's titleOfSelectedItem() as Unicode text
-        tell me to log selectedPlaylist
+        tell me to log "Syncing playlist: " & selectedPlaylist
         set selectedPath to |path|() of mediaPath's |URL|()
-        tell me to log selectedPath
+        tell me to log "Syncing to: " & selectedPath
         
         -- Start progress
         progressText's setStringValue_("Scanning playlist ...")
@@ -145,6 +147,7 @@ script AppDelegate
         progressIndicator's setDoubleValue_(1.0)
         
         -- Copy tracks to target
+        set failures to {}
         set writtenFileSet to NSMutableSet's alloc()'s initWithCapacity_(count of trackList)
         set trackCount to count of trackList
         set i to 0.0
@@ -176,16 +179,61 @@ script AppDelegate
             set sourcePathPosix to PathConverter's createPosixFromHFS_(sourcePath)
 
             -- create folder as needed
-            set status to fileMan's createDirectoryAtPath_withIntermediateDirectories_attributes_error_(albumPath, true, nil, nil)
-            set failures to {}
-            if status is true then
-                tell me to log "Copying " & sourcePathPosix & " to " & destinationPath
-                --set status to fileMan's copyItemAtPath_toPath_error_(sourcePathPosix, destinationPath, nil)
+            if simulate is false
+                set status to fileMan's createDirectoryAtPath_withIntermediateDirectories_attributes_error_(albumPath, true, nil, nil)
+            else
                 set status to true
-                if status is false then
-                    tell me to log "Failed: " & sourcePath
-                    set failures to failures & {sourcePath}
+            end if
+            if status is false then
+                tell me to log "Error creating directory: " & albumPath
+            end if
+            if status is true then
+                -- Determine if identical file already exists at destination
+                set skipCopy to false
+                set destinationExists to fileMan's fileExistsAtPath_(destinationPath)
+                if destinationExists is true
+                    -- Are size and date the same?
+                    set destinationAttributes to fileMan's attributesOfItemAtPath_error_(destinationPath, nil)
+                    set sourceAttributes to fileMan's attributesOfItemAtPath_error_(sourcePathPosix, nil)
+                    if sourceAttributes's fileSize() equals destinationAttributes's fileSize() then
+                        if sourceAttributes's fileCreationDate() equals destinationAttributes's fileCreationDate() then
+                            -- files match
+                            tell me to log "Up to date: " & sourcePathPosix
+                            set skipCopy to true
+                        else
+                            tell me to log "Creation date mismatch"
+                        end if
+                    else
+                        tell me to log "File size mismatch"
+                    end if
+                    if skipCopy is false
+                        -- Delete the destination file
+                        set status to fileMan's removeItemAtPath_error_(destinationPath, missing value)
+                        if status is false
+                            -- Delete failed so skip copy
+                            set skipCopy to true
+                            tell me to log "Failed deleting old target: " & destinationPath
+                        end if
+                    end if
+                end if
+                -- Copy file if needed
+                if skipCopy is false
+                    tell me to log "Copying " & sourcePathPosix & " to " & destinationPath
+                    if simulate is false
+                        set status to fileMan's copyItemAtPath_toPath_error_(sourcePathPosix, destinationPath, nil)
+                    else
+                        set status to true
+                    end if
+                    -- Did copy work?
+                    if status is false then
+                        tell me to log "Copy failed: " & sourcePathPosix
+                        set failures to failures & {sourcePathPosix}
+                    else
+                        -- Add to copied files set (so we can look for orphans later)
+                        writtenFileSet's addObject_(destinationPath)
+                    end if
                 else
+                    -- Add skipped files to copied files set (they are not orphans)
                     writtenFileSet's addObject_(destinationPath)
                 end if
             end if
@@ -213,12 +261,15 @@ script AppDelegate
         set setIterator to destinationFileSet's objectEnumerator()
         set aFile to setIterator's nextObject()
         repeat while aFile /= missing value
-            tell me to log aFile as text
             -- is this a file?
             set {status, isDir} to fileMan's fileExistsAtPath_isDirectory_(aFile, reference)
             if isDir is false then
-                tell me to log "Delete: " & aFile
-                set status to fileMan's removeItemAtPath_error_(aFile, missing value)
+                tell me to log "Delete file: " & aFile
+                if simulate is false
+                    set status to fileMan's removeItemAtPath_error_(aFile, missing value)
+                else
+                    set status to true
+                end if
                 -- Remove from the set
                 destinationFileSet's removeObject_(aFile)
             end if
@@ -242,9 +293,11 @@ script AppDelegate
                 end if
                 if contentsCount is 0 then
                     -- Directory is empty so delete it
-                    tell me to log "Deleting: " & aFile
-                    set status to fileMan's removeItemAtPath_error_(aFile, missing value)
-                    -- Remove from the set
+                    tell me to log "Deleting dir: " & aFile
+                    if simulate is false
+                        set status to fileMan's removeItemAtPath_error_(aFile, missing value)
+                    end if
+                    -- Remove from the set. We do this unconditionally because even if the delete failed, we don't want to try this one again.
                     destinationFileSet's removeObject_(aFile)
                     -- We've mutated the set, so bail out of the inner loop
                     exit
