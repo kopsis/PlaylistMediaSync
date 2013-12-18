@@ -13,6 +13,7 @@ property NSFileManager : class "NSFileManager"
 property NSDirectoryEnumerator : class "NSDirectoryEnumerator"
 property PathConverter : class "PathConverter"
 property NSMutableSet : class "NSMutableSet"
+property WindowController : current application's class "WindowController" -- controller for multiple windows
 
 script AppDelegate
 	property parent : class "NSObject"
@@ -23,24 +24,31 @@ script AppDelegate
     property mediaPathValue : missing value
     property progressText : missing value
     property progressIndicator : missing value
-    property errorTextView : missing value
-    property errorWindow : missing value
+    property mainWindow : missing value
+    property mainView : missing value
     property nil : missing value
     
     property simulate : false
+    property errorMessages : ""
+    property debugLog : ""
 	
     on awakeFromNib()
-        tell me to log "in awakeFromNib"
+        logMessage_("in awakeFromNib")
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
         tell defaults to registerDefaults_({selectedPlaylist:"Playlist"})
         tell defaults to registerDefaults_({selectedPath:"/"})
     end awakeFromNib
     
+    on logMessage_(aMessage)
+        tell me to log aMessage
+        set debugLog to debugLog & aMessage & "\n"
+    end logMessage_
+    
 	on applicationWillFinishLaunching_(aNotification)
 		-- Insert code here to initialize your application before any files are opened
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
         
-        tell me to log "in applicationWillFinishLaunching"
+        logMessage_("in applicationWillFinishLaunching")
 
         -- Get list of user playlists from iTunes
         set all_userps to {}
@@ -54,12 +62,12 @@ script AppDelegate
         
         -- Set playlist selection from defaults
         tell defaults to set selectedPlaylist to objectForKey_("selectedPlaylist")
-        tell me to log "playlist from defaults: " & selectedPlaylist
+        logMessage_("playlist from defaults: " & selectedPlaylist)
         set selectedPlaylistIdx to playlistName's indexOfItemWithTitle_(selectedPlaylist)
         if selectedPlaylistIdx >= 0 then
             playlistName's selectItemAtIndex_(selectedPlaylistIdx)
         else
-            tell me to log "No playlist named " & selectedPlaylist
+            logMessage_("No playlist named " & selectedPlaylist)
         end if
         
         -- Clear progress
@@ -81,15 +89,19 @@ script AppDelegate
         -- Save playlist selection as default
         tell current application's NSUserDefaults to set defaults to standardUserDefaults()
         if playlistSelection /= missing value then
-            tell me to log "Selected playlist: " & playlistSelection
+            logMessage_("Selected playlist: " & playlistSelection)
             tell defaults to setObject_forKey_(playlistSelection, "selectedPlaylist")
+		end if
+        if mediaPathValue /= missing value then
+            logMessage_("Media path: " & mediaPathValue's |path|())
+            tell defaults to setObject_forKey_(mediaPathValue's |path|(), "selectedPath")
 		end if
         return current application's NSTerminateNow
 	end applicationShouldTerminate_
 
     on helperSetMediaPath_(pathText)
         -- Set the path control to the selected folder
-        tell me to log "Setting media path to " & pathText
+        logMessage_("Setting media path to " & pathText)
         set newURL to NSURL's alloc()'s initFileURLWithPath_(pathText)
         mediaPath's setURL_(newURL)
         -- Save as default
@@ -105,16 +117,43 @@ script AppDelegate
         helperSetMediaPath_(folderName)
     end changePath_
     
+    on showLog_(sender)
+        doLogWindow()
+    end showLog_
+    
+    on doErrorWindow()
+        log "doErrorWindow ..."
+        tell WindowController's alloc's init()
+            setWindowTitle_("Errors")
+            setLabelContents_("PlaylistMediaSync encountered the following errors:")
+            setTextFieldContents_(errorMessages)
+            showWindow_(me)
+        end tell
+        -- mainView's |window|'s makeKeyAndOrderFront_(me) -- restore the main window
+    end doErrorWindow
+    
+    on doLogWindow()
+        log "doLogWindow ..."
+        tell WindowController's alloc's init()
+            setWindowTitle_("Log")
+            setLabelContents_("PlaylistMediaSync debug log:")
+            setTextFieldContents_(debugLog)
+            showWindow_(me)
+        end tell
+        set debugLog to ""
+    end doLogWindow
+    
     on doSync_(sender)
         -- When Sync button is clicked ...
-        tell me to log "Sync Button clicked"
+        logMessage_("Sync Button clicked")
         tell current application's NSFileManager to set fileMan to defaultManager()
+        set errorMessages to ""
 
         -- Get the selected playlist and path
         set selectedPlaylist to playlistName's titleOfSelectedItem() as Unicode text
-        tell me to log "Syncing playlist: " & selectedPlaylist
+        logMessage_("Syncing playlist: " & selectedPlaylist)
         set selectedPath to |path|() of mediaPath's |URL|()
-        tell me to log "Syncing to: " & selectedPath
+        logMessage_("Syncing to: " & selectedPath)
         
         -- Start progress
         progressText's setStringValue_("Scanning playlist ...")
@@ -128,7 +167,7 @@ script AppDelegate
         tell application "iTunes"
             repeat with aTrack in tracks of user playlist selectedPlaylist
                 set theFile to get location of aTrack as text
-                -- tell me to log theFile
+                -- logMessage_(theFile)
                 set theArtist to get artist of aTrack
                 set theAlbum to get album of aTrack
                 set theName to get name of aTrack
@@ -147,7 +186,6 @@ script AppDelegate
         progressIndicator's setDoubleValue_(1.0)
         
         -- Copy tracks to target
-        set failures to {}
         set writtenFileSet to NSMutableSet's alloc()'s initWithCapacity_(count of trackList)
         set trackCount to count of trackList
         set i to 0.0
@@ -176,65 +214,80 @@ script AppDelegate
             
             -- set the source path
             set sourcePath to tfile of aTrack
-            set sourcePathPosix to PathConverter's createPosixFromHFS_(sourcePath)
-
-            -- create folder as needed
-            if simulate is false
-                set status to fileMan's createDirectoryAtPath_withIntermediateDirectories_attributes_error_(albumPath, true, nil, nil)
+            if sourcePath equals "missing value" then
+                set errorInfo to "Can't find source for " & tname of aTrack
+                set errorMessages to errorMessages & errorInfo & "\n"
+                logMessage_(errorInfo)
             else
-                set status to true
-            end if
-            if status is false then
-                tell me to log "Error creating directory: " & albumPath
-            end if
-            if status is true then
-                -- Determine if identical file already exists at destination
-                set skipCopy to false
-                set destinationExists to fileMan's fileExistsAtPath_(destinationPath)
-                if destinationExists is true
-                    -- Are size and date the same?
-                    set destinationAttributes to fileMan's attributesOfItemAtPath_error_(destinationPath, nil)
-                    set sourceAttributes to fileMan's attributesOfItemAtPath_error_(sourcePathPosix, nil)
-                    if sourceAttributes's fileSize() equals destinationAttributes's fileSize() then
-                        if sourceAttributes's fileCreationDate() equals destinationAttributes's fileCreationDate() then
-                            -- files match
-                            tell me to log "Up to date: " & sourcePathPosix
-                            set skipCopy to true
-                        else
-                            tell me to log "Creation date mismatch"
-                        end if
-                    else
-                        tell me to log "File size mismatch"
-                    end if
-                    if skipCopy is false
-                        -- Delete the destination file
-                        set status to fileMan's removeItemAtPath_error_(destinationPath, missing value)
-                        if status is false
-                            -- Delete failed so skip copy
-                            set skipCopy to true
-                            tell me to log "Failed deleting old target: " & destinationPath
-                        end if
-                    end if
+                set sourcePathPosix to PathConverter's createPosixFromHFS_(sourcePath)
+
+                -- create folder as needed
+                if simulate is false
+                    set status to fileMan's createDirectoryAtPath_withIntermediateDirectories_attributes_error_(albumPath, true, nil, nil)
+                else
+                    set status to true
                 end if
-                -- Copy file if needed
-                if skipCopy is false
-                    tell me to log "Copying " & sourcePathPosix & " to " & destinationPath
-                    if simulate is false
-                        set status to fileMan's copyItemAtPath_toPath_error_(sourcePathPosix, destinationPath, nil)
-                    else
-                        set status to true
+                if status is false then
+                    set errorMessages to errorMessages & "Error creating directory: " & albumPath & "\n"
+                    logMessage_("Error creating directory: " & albumPath)
+                end if
+                if status is true then
+                    -- Determine if identical file already exists at destination
+                    set skipCopy to false
+                    set destinationExists to fileMan's fileExistsAtPath_(destinationPath)
+                    if destinationExists is true
+                        -- Are size and date the same?
+                        set destinationAttributes to fileMan's attributesOfItemAtPath_error_(destinationPath, nil)
+                        if destinationAttributes equals nil then
+                            logMessage_("Can't get dest attributes for " & destinationPath)
+                        end if
+                        set sourceAttributes to fileMan's attributesOfItemAtPath_error_(sourcePathPosix, nil)
+                        if sourceAttributes equals nil then
+                            logMessage_("Can't get src attributes for " & sourcePathPosix)
+                        end if
+                        if sourceAttributes's fileSize() equals destinationAttributes's fileSize() then
+                            if sourceAttributes's fileCreationDate() equals destinationAttributes's fileCreationDate() then
+                                -- files match
+                                logMessage_("Up to date: " & sourcePathPosix)
+                                set skipCopy to true
+                            else
+                                logMessage_("Creation date mismatch")
+                            end if
+                        else
+                            logMessage_("File size mismatch")
+                        end if
+                        if skipCopy is false
+                            -- Delete the destination file
+                            set status to fileMan's removeItemAtPath_error_(destinationPath, missing value)
+                            if status is false
+                                -- Delete failed so skip copy
+                                set skipCopy to true
+                                set errorMessages to errorMessages & "Failed deleting old target: " & destinationPath & "\n"
+                                logMessage_("Failed deleting old target: " & destinationPath)
+                            end if
+                        end if
                     end if
-                    -- Did copy work?
-                    if status is false then
-                        tell me to log "Copy failed: " & sourcePathPosix
-                        set failures to failures & {sourcePathPosix}
+                    -- Copy file if needed
+                    if skipCopy is false
+                        logMessage_("Copying " & sourcePathPosix & " to " & destinationPath)
+                        if simulate is false
+                            set status to fileMan's copyItemAtPath_toPath_error_(sourcePathPosix, destinationPath, nil)
+                        else
+                            set status to true
+                        end if
+                        -- Did copy work?
+                        if status is false then
+                            set errorMessages to errorMessages & "Copy failed: " & sourcePathPosix & "\n"
+                            logMessage_("Copy failed: " & sourcePathPosix)
+                            set failures to failures & {sourcePathPosix}
+                        else
+                            -- Add to copied files set (so we can look for orphans later)
+                            writtenFileSet's addObject_(destinationPath)
+                        end if
                     else
-                        -- Add to copied files set (so we can look for orphans later)
+                        -- Add skipped files to copied files set (they are not orphans)
                         writtenFileSet's addObject_(destinationPath)
                     end if
-                else
-                    -- Add skipped files to copied files set (they are not orphans)
-                    writtenFileSet's addObject_(destinationPath)
                 end if
             end if
         end repeat
@@ -246,7 +299,7 @@ script AppDelegate
         delay 2
         
         -- Delete orphans on target
-        tell me to log "Copied files: " & writtenFileSet's |count|()
+        logMessage_("Copied files: " & writtenFileSet's |count|())
         -- Create set with full paths of all files/dirs in destination path
         set destinationFileSet to NSMutableSet's alloc()'s init()
         set dirIterator to fileMan's enumeratorAtPath_(pathString)
@@ -256,7 +309,7 @@ script AppDelegate
         end repeat
         -- Subtract the set of written files to get the list of dirs and orphans
         destinationFileSet's minusSet_(writtenFileSet)
-        tell me to log "Orphaned files: " & destinationFileSet's |count|()
+        logMessage_("Orphaned files: " & destinationFileSet's |count|())
         -- Iterate over what remains looking for files
         set setIterator to destinationFileSet's objectEnumerator()
         set aFile to setIterator's nextObject()
@@ -264,7 +317,7 @@ script AppDelegate
             -- is this a file?
             set {status, isDir} to fileMan's fileExistsAtPath_isDirectory_(aFile, reference)
             if isDir is false then
-                tell me to log "Delete file: " & aFile
+                logMessage_("Delete file: " & aFile)
                 if simulate is false
                     set status to fileMan's removeItemAtPath_error_(aFile, missing value)
                 else
@@ -283,7 +336,7 @@ script AppDelegate
             set setIterator to destinationFileSet's objectEnumerator()
             set aFile to setIterator's nextObject()
             repeat while aFile /= missing value
-                -- tell me to log "Checking for empty dir: " & aFile
+                -- logMessage_("Checking for empty dir: " & aFile)
                 -- Is directory empty?
                 set dirContents to fileMan's contentsOfDirectoryAtPath_error_(aFile, missing value)
                 if dirContents is missing value then
@@ -293,7 +346,7 @@ script AppDelegate
                 end if
                 if contentsCount is 0 then
                     -- Directory is empty so delete it
-                    tell me to log "Deleting dir: " & aFile
+                    logMessage_("Deleting dir: " & aFile)
                     if simulate is false
                         set status to fileMan's removeItemAtPath_error_(aFile, missing value)
                     end if
@@ -308,7 +361,7 @@ script AppDelegate
             set thisCount to destinationFileSet's |count|()
             if thisCount = lastCount then
                 set deadlocked to true
-                tell me to log "Deadlocked, bailing out of orphan cleanup"
+                logMessage_("Deadlocked, bailing out of orphan cleanup")
             else
                 set lastCount to thisCount
             end if
@@ -319,8 +372,10 @@ script AppDelegate
         progressIndicator's setIndeterminate_(false)
         progressText's setStringValue_("")
         progressIndicator's setDoubleValue_(0.0)
-        
-        tell me to log "Sync Done - " & count of trackList & " items"
+
+        set errorMessages to errorMessages & "Sync Done - " & count of trackList & " items\n"
+        logMessage_("Sync Done - " & count of trackList & " items")
+        doErrorWindow()
     end doSync_
 
     on sanitize(theText)
@@ -336,7 +391,7 @@ script AppDelegate
         repeat with arg in arglist
             set args to args & " " & quoted form of arg
         end repeat
-        -- tell me to log "Running python script: " & pythonscript & args
+        -- logMessage_("Running python script: " & pythonscript & args)
         set theFolder to current application's NSBundle's mainBundle()'s bundlePath() as text
         set pythonscript to quoted form of POSIX path of (theFolder & "/Contents/Resources/" & pythonscript as string)
         tell me to return do shell script "/usr/bin/python " & pythonscript & args

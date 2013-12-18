@@ -18,6 +18,8 @@
 		E50AC8C7185FC222005C2DD5 /* sanitize.py in Resources */ = {isa = PBXBuildFile; fileRef = E50AC8C6185FC222005C2DD5 /* sanitize.py */; };
 		E50AC8C918609E95005C2DD5 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E50AC8C818609E95005C2DD5 /* CoreFoundation.framework */; };
 		E50AC8CC1860A6B4005C2DD5 /* PathConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = E50AC8CB1860A6B4005C2DD5 /* PathConverter.m */; };
+		E58A35B1186248D100B597CC /* WindowController.applescript in Sources */ = {isa = PBXBuildFile; fileRef = E58A35B0186248D100B597CC /* WindowController.applescript */; };
+		E58A35B41862493900B597CC /* WindowTemplate.xib in Resources */ = {isa = PBXBuildFile; fileRef = E58A35B21862493900B597CC /* WindowTemplate.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +41,8 @@
 		E50AC8C818609E95005C2DD5 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		E50AC8CA1860A6B4005C2DD5 /* PathConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PathConverter.h; sourceTree = "<group>"; };
 		E50AC8CB1860A6B4005C2DD5 /* PathConverter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PathConverter.m; sourceTree = "<group>"; };
+		E58A35B0186248D100B597CC /* WindowController.applescript */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.applescript; path = WindowController.applescript; sourceTree = "<group>"; };
+		E58A35B31862493900B597CC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/WindowTemplate.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +102,8 @@
 			children = (
 				E50AC8C6185FC222005C2DD5 /* sanitize.py */,
 				E50AC8BA185F41B0005C2DD5 /* AppDelegate.applescript */,
+				E58A35B0186248D100B597CC /* WindowController.applescript */,
+				E58A35B21862493900B597CC /* WindowTemplate.xib */,
 				E50AC8BC185F41B0005C2DD5 /* MainMenu.xib */,
 				E50AC8BF185F41B0005C2DD5 /* Images.xcassets */,
 				E50AC8AF185F41B0005C2DD5 /* Supporting Files */,
@@ -174,6 +180,7 @@
 				E50AC8C7185FC222005C2DD5 /* sanitize.py in Resources */,
 				E50AC8B3185F41B0005C2DD5 /* InfoPlist.strings in Resources */,
 				E50AC8C0185F41B0005C2DD5 /* Images.xcassets in Resources */,
+				E58A35B41862493900B597CC /* WindowTemplate.xib in Resources */,
 				E50AC8B9185F41B0005C2DD5 /* Credits.rtf in Resources */,
 				E50AC8BE185F41B0005C2DD5 /* MainMenu.xib in Resources */,
 			);
@@ -187,6 +194,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E50AC8BB185F41B0005C2DD5 /* AppDelegate.applescript in Sources */,
+				E58A35B1186248D100B597CC /* WindowController.applescript in Sources */,
 				E50AC8B5185F41B0005C2DD5 /* main.m in Sources */,
 				E50AC8CC1860A6B4005C2DD5 /* PathConverter.m in Sources */,
 			);
@@ -217,6 +225,14 @@
 				E50AC8BD185F41B0005C2DD5 /* Base */,
 			);
 			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		E58A35B21862493900B597CC /* WindowTemplate.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E58A35B31862493900B597CC /* Base */,
+			);
+			name = WindowTemplate.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -335,6 +351,7 @@
 				E50AC8C5185F41B0005C2DD5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

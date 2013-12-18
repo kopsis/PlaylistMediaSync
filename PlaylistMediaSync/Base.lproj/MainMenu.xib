@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="4514" systemVersion="13A603" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="4514" systemVersion="13B42" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="4514"/>
     </dependencies>
@@ -605,6 +605,12 @@
                                     <action selector="runToolbarCustomizationPalette:" target="-1" id="365"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Show Log" id="nEE-qt-bJs">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="showLog:" target="494" id="qvd-zE-dPt"/>
+                                </connections>
+                            </menuItem>
                         </items>
                     </menu>
                 </menuItem>
@@ -690,13 +696,16 @@
                             <font key="font" metaFont="smallSystem"/>
                             <url key="url" string="file:///"/>
                         </pathCell>
+                        <connections>
+                            <binding destination="494" name="value" keyPath="mediaPathValue" id="9wW-pS-lsv"/>
+                        </connections>
                     </pathControl>
                     <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zdF-09-8Mf">
                         <rect key="frame" x="203" y="179" width="261" height="26"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="C2E-Xi-XQa" id="2Ns-UJ-o1k">
                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
+                            <font key="font" metaFont="menu"/>
                             <menu key="menu" title="OtherViews" id="JId-iY-2uK">
                                 <items>
                                     <menuItem title="Item 1" state="on" id="C2E-Xi-XQa"/>
@@ -727,8 +736,7 @@
         </window>
         <customObject id="494" customClass="AppDelegate">
             <connections>
-                <outlet property="errorTextView" destination="5lN-Rg-GXZ" id="4Ji-72-YMQ"/>
-                <outlet property="errorWindow" destination="aTS-R3-9c5" id="oI3-HC-J5P"/>
+                <outlet property="mainWindow" destination="371" id="yKx-8k-7uH"/>
                 <outlet property="mediaPath" destination="Erb-W7-Abj" id="z7n-TD-VWG"/>
                 <outlet property="playlistName" destination="zdF-09-8Mf" id="BBo-a3-hRx"/>
                 <outlet property="progressIndicator" destination="AZ0-gy-uXN" id="tQa-xo-EOM"/>
@@ -736,26 +744,6 @@
             </connections>
         </customObject>
         <customObject id="420" customClass="NSFontManager"/>
-        <window title="Errors" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="aTS-R3-9c5">
-            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="196" y="240" width="480" height="270"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1178"/>
-            <view key="contentView" id="Bzb-cR-9k4">
-                <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
-                <autoresizingMask key="autoresizingMask"/>
-                <subviews>
-                    <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5lN-Rg-GXZ">
-                        <rect key="frame" x="18" y="20" width="444" height="230"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" controlSize="mini" selectable="YES" sendsActionOnEndEditing="YES" title="Multiline Label" id="Hie-z5-Gtn">
-                            <font key="font" metaFont="system"/>
-                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                        </textFieldCell>
-                    </textField>
-                </subviews>
-            </view>
-        </window>
         <userDefaultsController representsSharedInstance="YES" id="uET-Mf-9um"/>
     </objects>
 </document>
