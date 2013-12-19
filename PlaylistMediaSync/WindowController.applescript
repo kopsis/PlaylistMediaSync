@@ -10,7 +10,6 @@
  Note that the controller loads its nib lazily - the window isn't loaded from the nib until it is shown.
  *)
 
-
 ##################################################
 # MARK: -
 # MARK: Application Properties
